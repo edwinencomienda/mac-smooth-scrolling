@@ -87,12 +87,12 @@ final class ScrollEngine {
         let dY = pointY != 0 ? pointY : lineY * 10
         let dX = pointX != 0 ? pointX : lineX * 10
 
-        // Cmd+Shift+scroll → jump to top (scroll up) or bottom (scroll down).
+        // Configured modifier + scroll → jump to top (scroll up) or bottom (scroll down).
         // Handled for both wheel and continuous devices.
         let flags = event.flags
-        if Settings.shared.jumpShortcutEnabled
-            && flags.contains(.maskCommand)
-            && flags.contains(.maskShift) {
+        let requiredJumpFlags = CGEventFlags(rawValue: Settings.shared.jumpModifierFlags)
+        let hasJumpModifiers = requiredJumpFlags.rawValue != 0 && flags.contains(requiredJumpFlags)
+        if Settings.shared.jumpShortcutEnabled && hasJumpModifiers {
             if dY != 0 {
                 let now = CACurrentMediaTime()
                 if now - lastJumpTime >= jumpThrottle {
@@ -119,7 +119,11 @@ final class ScrollEngine {
         let speed = Settings.shared.speed
 
         // Shift + wheel → horizontal scroll. Re-route the wheel's Y delta onto the X axis.
-        let shiftOnly = flags.contains(.maskShift) && !flags.contains(.maskCommand)
+        // Exclude Command/Option/Control so jump shortcuts aren't misread as horizontal scroll.
+        let shiftOnly = flags.contains(.maskShift)
+            && !flags.contains(.maskCommand)
+            && !flags.contains(.maskAlternate)
+            && !flags.contains(.maskControl)
 
         lock.lock()
         if shiftOnly {

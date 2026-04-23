@@ -29,7 +29,13 @@ struct SettingsView: View {
             Section {
                 Toggle("Enable smooth scroll", isOn: $settings.enabled)
                 Toggle("Reverse mouse scroll", isOn: $settings.reverse)
-                Toggle("Jump to top / bottom  (⌘⇧ + Scroll)", isOn: $settings.jumpShortcutEnabled)
+                Toggle("Jump to top / bottom", isOn: $settings.jumpShortcutEnabled)
+                LabeledContent("Jump hotkey") {
+                    HotkeyRecorder(
+                        flagsRaw: $settings.jumpModifierFlags,
+                        isDisabled: !settings.jumpShortcutEnabled
+                    )
+                }
                 LabeledContent("Scrolling Speed") {
                     Slider(value: $settings.speed, in: 1...6, step: 1) {
                         EmptyView()

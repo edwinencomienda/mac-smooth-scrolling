@@ -7,7 +7,7 @@ A tiny native macOS menu-bar app that adds smooth scrolling for external mice, w
 - Smooth, momentum-based scrolling for external wheel mice
 - Scrolling Speed slider (snaps to ticks)
 - Reverse mouse scroll (trackpad direction unaffected)
-- **Jump to top / bottom** — hold `⌘⇧` and scroll up/down to jump to edges
+- **Jump to top / bottom** — hold a recorded hotkey and scroll up/down to jump to edges; hotkey is fully customizable (default `⌥ Option`)
 - Launch at login
 - Lives in the menu bar (no Dock icon)
 - **Settings window** — full SwiftUI preferences pane, reachable from the menu bar or by relaunching
@@ -17,9 +17,21 @@ A tiny native macOS menu-bar app that adds smooth scrolling for external mice, w
 
 | Shortcut             | What it does                                          |
 | -------------------- | ----------------------------------------------------- |
-| `⇧` + scroll         | Scroll horizontally (wheel Y becomes X)              |
-| `⌘⇧` + scroll up     | Jump to the top of the current scroll view           |
-| `⌘⇧` + scroll down   | Jump to the bottom of the current scroll view        |
+| `⇧` + scroll                    | Scroll horizontally (wheel Y becomes X)       |
+| *jump hotkey* + scroll up       | Jump to the top of the current scroll view   |
+| *jump hotkey* + scroll down     | Jump to the bottom of the current scroll view |
+
+### Recording the jump hotkey
+
+1. Open the settings window.
+2. Click the **Jump hotkey** button under Scrolling.
+3. Press and hold any combination of `⌘ ⌥ ⌃ ⇧`, then release.
+4. The released combo is saved and used for the jump gesture.
+5. `Esc` cancels recording. The `×` button clears the hotkey (effectively disabling the jump while the toggle is still on).
+
+Only modifier keys are recorded — a regular keyboard key + scroll doesn't make ergonomic sense.
+
+Detection is "contains" semantics: if your recorded hotkey is `⌥`, then both `⌥ + scroll` and `⌥⇧ + scroll` will trigger the jump. Use a richer combo (e.g. `⌥⇧`) if you want to avoid that.
 
 Notes on the jump shortcut:
 
@@ -50,6 +62,7 @@ mac-smooth-scrolling/
     ├── Settings.swift                   # ObservableObject + UserDefaults-backed preferences
     ├── SettingsView.swift               # SwiftUI settings pane
     ├── SettingsWindowController.swift   # NSWindow host for the settings view
+    ├── HotkeyRecorder.swift             # modifier-combo recorder used in settings
     └── Resources/
         ├── Info.plist               # bundle metadata (LSUIElement = true)
         └── MacSmoothScroll.entitlements
@@ -155,6 +168,7 @@ Stored in `UserDefaults` under these keys:
 | `reverseMouse`         | Bool   | `false` | —         |
 | `scrollSpeed`          | Double | `3.0`   | 1.0 – 6.0 |
 | `jumpShortcutEnabled`  | Bool   | `true`  | —         |
+| `jumpShortcutFlags`    | Int64  | `0x80000` (⌥) | CGEventFlags bitmask |
 | `hideMenuBarIcon`      | Bool   | `false` | —         |
 
 Reset with:
