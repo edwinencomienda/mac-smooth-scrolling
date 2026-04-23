@@ -8,6 +8,7 @@ final class Settings {
         static let enabled = "smoothEnabled"
         static let reverse = "reverseMouse"
         static let speed = "scrollSpeed"
+        static let jumpShortcut = "jumpShortcutEnabled"
     }
 
     var onChange: (() -> Void)?
@@ -29,5 +30,11 @@ final class Settings {
             return v == 0 ? 3.0 : v
         }
         set { defaults.set(newValue, forKey: Keys.speed); onChange?() }
+    }
+
+    // Cmd+Shift+scroll → jump to top/bottom. Default on.
+    var jumpShortcutEnabled: Bool {
+        get { defaults.object(forKey: Keys.jumpShortcut) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.jumpShortcut); onChange?() }
     }
 }

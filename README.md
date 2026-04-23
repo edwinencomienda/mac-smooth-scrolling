@@ -7,7 +7,24 @@ A tiny native macOS menu-bar app that adds smooth scrolling for external mice, w
 - Smooth, momentum-based scrolling for external wheel mice
 - Scrolling Speed slider (snaps to ticks)
 - Reverse mouse scroll (trackpad direction unaffected)
+- **Jump to top / bottom** — hold `⌘⇧` and scroll up/down to jump to edges
+- Launch at login
 - Lives in the menu bar (no Dock icon)
+
+## Shortcuts
+
+| Shortcut             | What it does                                          |
+| -------------------- | ----------------------------------------------------- |
+| `⌘⇧` + scroll up     | Jump to the top of the current scroll view           |
+| `⌘⇧` + scroll down   | Jump to the bottom of the current scroll view        |
+
+Notes on the jump shortcut:
+
+- Works with both mouse wheel and trackpad.
+- Respects the **Reverse mouse scroll** setting — physical-up always means "go to top".
+- Throttled to ~400ms, so a single wheel flick = a single jump (no spam when holding).
+- Modifier flags are stripped from the synthesized scroll event, so apps don't misread it as `Cmd+scroll` zoom (Safari, Preview, etc.).
+- Can be turned off from the menu bar (**Jump to top / bottom** toggle).
 
 ## Requirements
 
@@ -106,11 +123,12 @@ make dmg    # package the signed .app into a distributable DMG
 
 Stored in `UserDefaults` under these keys:
 
-| Key             | Type   | Default | Range     |
-| --------------- | ------ | ------- | --------- |
-| `smoothEnabled` | Bool   | `true`  | —         |
-| `reverseMouse`  | Bool   | `false` | —         |
-| `scrollSpeed`   | Double | `3.0`   | 1.0 – 6.0 |
+| Key                    | Type   | Default | Range     |
+| ---------------------- | ------ | ------- | --------- |
+| `smoothEnabled`        | Bool   | `true`  | —         |
+| `reverseMouse`         | Bool   | `false` | —         |
+| `scrollSpeed`          | Double | `3.0`   | 1.0 – 6.0 |
+| `jumpShortcutEnabled`  | Bool   | `true`  | —         |
 
 Reset with:
 

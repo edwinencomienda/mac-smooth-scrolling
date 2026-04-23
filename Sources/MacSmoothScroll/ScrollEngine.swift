@@ -22,6 +22,10 @@ final class ScrollEngine {
     // 0.15 → ~95% travelled in ~18 frames (~300ms). Higher = snappier.
     private let frameFraction: Double = 0.15
 
+    // Throttle for Cmd+Shift+scroll jump-to-top/bottom.
+    private var lastJumpTime: CFTimeInterval = 0
+    private let jumpThrottle: CFTimeInterval = 0.4
+
     func start() {
         guard eventTap == nil else { return }
 
@@ -75,12 +79,6 @@ final class ScrollEngine {
             return Unmanaged.passUnretained(event)
         }
 
-        // Skip trackpad / Magic Mouse — macOS already smooths those.
-        let isContinuous = event.getIntegerValueField(.scrollWheelEventIsContinuous) != 0
-        if isContinuous {
-            return Unmanaged.passUnretained(event)
-        }
-
         // Prefer point deltas (sub-pixel), fall back to line deltas * 10.
         let pointY = event.getDoubleValueField(.scrollWheelEventPointDeltaAxis1)
         let pointX = event.getDoubleValueField(.scrollWheelEventPointDeltaAxis2)
@@ -88,6 +86,30 @@ final class ScrollEngine {
         let lineX = Double(event.getIntegerValueField(.scrollWheelEventDeltaAxis2))
         let dY = pointY != 0 ? pointY : lineY * 10
         let dX = pointX != 0 ? pointX : lineX * 10
+
+        // Cmd+Shift+scroll → jump to top (scroll up) or bottom (scroll down).
+        // Handled for both wheel and continuous devices.
+        let flags = event.flags
+        if Settings.shared.jumpShortcutEnabled
+            && flags.contains(.maskCommand)
+            && flags.contains(.maskShift) {
+            if dY != 0 {
+                let now = CACurrentMediaTime()
+                if now - lastJumpTime >= jumpThrottle {
+                    lastJumpTime = now
+                    let reversed = Settings.shared.reverse
+                    let up = reversed ? (dY < 0) : (dY > 0)
+                    jumpToEdge(up: up)
+                }
+            }
+            return nil
+        }
+
+        // Skip trackpad / Magic Mouse for smoothing — macOS already smooths those.
+        let isContinuous = event.getIntegerValueField(.scrollWheelEventIsContinuous) != 0
+        if isContinuous {
+            return Unmanaged.passUnretained(event)
+        }
 
         if dY == 0 && dX == 0 {
             return Unmanaged.passUnretained(event)
@@ -177,6 +199,33 @@ final class ScrollEngine {
         event.setDoubleValueField(.scrollWheelEventPointDeltaAxis1, value: fineY)
         event.setDoubleValueField(.scrollWheelEventPointDeltaAxis2, value: fineX)
         event.setIntegerValueField(.scrollWheelEventIsContinuous, value: 1)
+        event.post(tap: .cgSessionEventTap)
+    }
+
+    // MARK: - Jump to top/bottom
+
+    private func jumpToEdge(up: Bool) {
+        // Clear any in-flight smoothing so the jump isn't fought by momentum.
+        lock.lock()
+        pendingX = 0; pendingY = 0
+        residualX = 0; residualY = 0
+        lock.unlock()
+
+        // One huge scroll event. Positive Y = scroll up (toward content top).
+        let magnitude: Int32 = 100_000
+        let deltaY: Int32 = up ? magnitude : -magnitude
+
+        guard let event = CGEvent(
+            scrollWheelEvent2Source: nil,
+            units: .pixel,
+            wheelCount: 1,
+            wheel1: deltaY,
+            wheel2: 0,
+            wheel3: 0
+        ) else { return }
+
+        // Clear modifier flags so apps don't interpret this as Cmd+scroll (zoom, etc.).
+        event.flags = []
         event.post(tap: .cgSessionEventTap)
     }
 }
