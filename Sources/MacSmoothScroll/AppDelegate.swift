@@ -1,5 +1,6 @@
 import Cocoa
 import ApplicationServices
+import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
@@ -32,7 +33,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func buildStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.title = "↕"
+            if let url = Bundle.module.url(forResource: "mouse", withExtension: "svg"),
+               let image = NSImage(contentsOf: url) {
+                image.size = NSSize(width: 18, height: 18)
+                image.isTemplate = true
+                button.image = image
+            } else {
+                button.title = "↕"
+            }
             button.toolTip = "Smooth Scroll"
         }
 
@@ -51,6 +59,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
 
         menu.addItem(makeSpeedItem())
+
+        menu.addItem(.separator())
+
+        let loginItem = NSMenuItem(title: "Launch at login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        loginItem.target = self
+        loginItem.state = isLaunchAtLoginEnabled() ? .on : .off
+        menu.addItem(loginItem)
 
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -115,5 +130,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func speedChanged(_ sender: NSSlider) {
         Settings.shared.speed = sender.doubleValue
+    }
+
+    // MARK: - Launch at login
+
+    private func isLaunchAtLoginEnabled() -> Bool {
+        SMAppService.mainApp.status == .enabled
+    }
+
+    @objc private func toggleLaunchAtLogin(_ sender: NSMenuItem) {
+        let service = SMAppService.mainApp
+        do {
+            if service.status == .enabled {
+                try service.unregister()
+            } else {
+                try service.register()
+            }
+            sender.state = isLaunchAtLoginEnabled() ? .on : .off
+        } catch {
+            NSLog("Launch at login toggle failed: \(error.localizedDescription). This only works when running the bundled .app (make run-app / make install).")
+            let alert = NSAlert()
+            alert.messageText = "Can't change Launch at Login"
+            alert.informativeText = "This feature requires running the bundled app (from /Applications). Build with `make bundle` or `make install` first.\n\n\(error.localizedDescription)"
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
     }
 }
