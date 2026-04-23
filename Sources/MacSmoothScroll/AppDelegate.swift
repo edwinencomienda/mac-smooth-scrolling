@@ -33,6 +33,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ScrollEngine.shared.stop()
     }
 
+    // While the settings window is open we switch to `.regular` activation, which would
+    // normally terminate the app when the last window closes. Override so ⌘W (or the
+    // red traffic-light button) just hides the window and leaves the app running.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
     /// Called when the app is relaunched (Spotlight, Raycast, `open -a`, Dock click).
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         showSettingsWindow()

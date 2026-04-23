@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import ServiceManagement
 
 struct SettingsView: View {
@@ -41,6 +42,18 @@ struct SettingsView: View {
                 }
             } header: {
                 Text("Scrolling")
+            }
+
+            Section {
+                HStack {
+                    Spacer()
+                    Button(role: .destructive) {
+                        NSApp.terminate(nil)
+                    } label: {
+                        Text("Quit MacSmoothScroll")
+                    }
+                    .keyboardShortcut("q", modifiers: .command)
+                }
             }
         }
         .formStyle(.grouped)
