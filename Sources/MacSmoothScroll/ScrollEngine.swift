@@ -118,9 +118,16 @@ final class ScrollEngine {
         let sign: Double = Settings.shared.reverse ? -1 : 1
         let speed = Settings.shared.speed
 
+        // Shift + wheel → horizontal scroll. Re-route the wheel's Y delta onto the X axis.
+        let shiftOnly = flags.contains(.maskShift) && !flags.contains(.maskCommand)
+
         lock.lock()
-        pendingY += dY * speed * sign
-        pendingX += dX * speed * sign
+        if shiftOnly {
+            pendingX += dY * speed * sign
+        } else {
+            pendingY += dY * speed * sign
+            pendingX += dX * speed * sign
+        }
         lock.unlock()
 
         // Swallow original — the display link will emit smoothed events.

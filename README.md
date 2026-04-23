@@ -17,6 +17,7 @@ A tiny native macOS menu-bar app that adds smooth scrolling for external mice, w
 
 | Shortcut             | What it does                                          |
 | -------------------- | ----------------------------------------------------- |
+| `⇧` + scroll         | Scroll horizontally (wheel Y becomes X)              |
 | `⌘⇧` + scroll up     | Jump to the top of the current scroll view           |
 | `⌘⇧` + scroll down   | Jump to the bottom of the current scroll view        |
 
