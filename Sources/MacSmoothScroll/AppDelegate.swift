@@ -1,42 +1,42 @@
 import Cocoa
 import ApplicationServices
 import ServiceManagement
-
-/// A menu-item content view that stretches to match the width of the enclosing menu,
-/// so controls (sliders, etc.) can span the full available width.
-final class FullWidthMenuItemView: NSView {
-    override func viewDidMoveToSuperview() {
-        super.viewDidMoveToSuperview()
-        matchSuperviewWidth()
-    }
-
-    override func layout() {
-        super.layout()
-        matchSuperviewWidth()
-    }
-
-    private func matchSuperviewWidth() {
-        guard let superview = superview else { return }
-        let targetWidth = max(superview.bounds.width, 240)
-        if frame.size.width != targetWidth {
-            setFrameSize(NSSize(width: targetWidth, height: frame.size.height))
-        }
-    }
-}
+import Combine
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var statusItem: NSStatusItem!
-    private var speedSlider: NSSlider!
-    private var speedLabel: NSTextField!
+    private var statusItem: NSStatusItem?
+    private var contextMenu: NSMenu?
+    private var settingsWindowController: SettingsWindowController?
+    private var cancellables: Set<AnyCancellable> = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         ensureAccessibilityPermission()
-        buildStatusItem()
+        applyMenuBarVisibility()
+        observeSettings()
         ScrollEngine.shared.start()
+
+        // If the menu bar icon is hidden, surface settings so the user isn't stranded.
+        // But stay silent on a likely boot launch — popping a window during login is jarring.
+        if Settings.shared.hideMenuBarIcon && !isLikelyLoginLaunch() {
+            showSettingsWindow()
+        }
+    }
+
+    /// Heuristic: if the system has only just finished booting, this launch is almost
+    /// certainly a "launch at login" auto-start rather than an explicit user action.
+    /// macOS doesn't expose a first-class API for this with `SMAppService.mainApp`.
+    private func isLikelyLoginLaunch() -> Bool {
+        ProcessInfo.processInfo.systemUptime < 120
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         ScrollEngine.shared.stop()
+    }
+
+    /// Called when the app is relaunched (Spotlight, Raycast, `open -a`, Dock click).
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showSettingsWindow()
+        return true
     }
 
     // MARK: - Permission
@@ -50,11 +50,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: - Settings observation
+
+    private func observeSettings() {
+        Settings.shared.$hideMenuBarIcon
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.applyMenuBarVisibility() }
+            .store(in: &cancellables)
+    }
+
+    private func applyMenuBarVisibility() {
+        if Settings.shared.hideMenuBarIcon {
+            removeStatusItem()
+        } else {
+            buildStatusItemIfNeeded()
+        }
+    }
+
+    private func removeStatusItem() {
+        if let item = statusItem {
+            NSStatusBar.system.removeStatusItem(item)
+        }
+        statusItem = nil
+    }
+
     // MARK: - Menu bar UI
 
-    private func buildStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        if let button = statusItem.button {
+    private func buildStatusItemIfNeeded() {
+        guard statusItem == nil else { return }
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = item.button {
             if let url = Bundle.module.url(forResource: "mouse", withExtension: "svg"),
                let image = NSImage(contentsOf: url) {
                 image.size = NSSize(width: 18, height: 18)
@@ -63,162 +89,63 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 button.title = "↕"
             }
-            button.toolTip = "Smooth Scroll"
+            button.toolTip = "MacSmoothScroll — click for settings, right-click for menu"
+            button.target = self
+            button.action = #selector(statusItemClicked(_:))
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
         let menu = NSMenu()
-
-        let loginItem = NSMenuItem(title: "Launch at login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
-        loginItem.target = self
-        loginItem.state = isLaunchAtLoginEnabled() ? .on : .off
-        menu.addItem(loginItem)
-
-        menu.addItem(.separator())
-
-        let enableItem = NSMenuItem(title: "Enable smooth scroll", action: #selector(toggleEnabled), keyEquivalent: "")
-        enableItem.target = self
-        enableItem.state = Settings.shared.enabled ? .on : .off
-        menu.addItem(enableItem)
-
-        let reverseItem = NSMenuItem(title: "Reverse mouse scroll", action: #selector(toggleReverse), keyEquivalent: "")
-        reverseItem.target = self
-        reverseItem.state = Settings.shared.reverse ? .on : .off
-        menu.addItem(reverseItem)
-
-        let jumpItem = NSMenuItem(
-            title: "Jump to top / bottom",
-            action: #selector(toggleJumpShortcut),
-            keyEquivalent: ""
-        )
-        jumpItem.target = self
-        jumpItem.state = Settings.shared.jumpShortcutEnabled ? .on : .off
-        jumpItem.toolTip = "Hold ⌘⇧ and scroll up to jump to top, or scroll down to jump to bottom."
-        let hint = NSMutableAttributedString(string: "Jump to top / bottom  ")
-        hint.append(NSAttributedString(
-            string: "⌘⇧ + Scroll",
-            attributes: [
-                .foregroundColor: NSColor.secondaryLabelColor,
-                .font: NSFont.menuFont(ofSize: NSFont.smallSystemFontSize),
-            ]
-        ))
-        jumpItem.attributedTitle = hint
-        menu.addItem(jumpItem)
-
-        menu.addItem(.separator())
-
-        menu.addItem(makeSpeedItem())
-
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quit)
+        self.contextMenu = menu
 
-        statusItem.menu = menu
+        self.statusItem = item
     }
 
-    private func makeSpeedItem() -> NSMenuItem {
-        let container = FullWidthMenuItemView(frame: NSRect(x: 0, y: 0, width: 260, height: 68))
-
-        let title = NSTextField(labelWithString: "Scrolling Speed")
-        title.font = .menuFont(ofSize: 0)
-        title.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(title)
-        self.speedLabel = title
-
-        let slider = NSSlider(
-            value: Settings.shared.speed,
-            minValue: 1.0,
-            maxValue: 6.0,
-            target: self,
-            action: #selector(speedChanged(_:))
-        )
-        slider.isContinuous = true
-        slider.numberOfTickMarks = 6
-        slider.allowsTickMarkValuesOnly = true
-        slider.tickMarkPosition = .below
-        slider.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(slider)
-        self.speedSlider = slider
-
-        let slow = NSTextField(labelWithString: "Slow")
-        slow.font = .systemFont(ofSize: 10)
-        slow.textColor = .secondaryLabelColor
-        slow.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(slow)
-
-        let fast = NSTextField(labelWithString: "Fast")
-        fast.font = .systemFont(ofSize: 10)
-        fast.textColor = .secondaryLabelColor
-        fast.alignment = .right
-        fast.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(fast)
-
-        let pad: CGFloat = 14
-        NSLayoutConstraint.activate([
-            title.topAnchor.constraint(equalTo: container.topAnchor, constant: 6),
-            title.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: pad),
-            title.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -pad),
-
-            slider.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 6),
-            slider.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: pad),
-            slider.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -pad),
-            slider.heightAnchor.constraint(equalToConstant: 20),
-
-            slow.topAnchor.constraint(equalTo: slider.bottomAnchor, constant: 2),
-            slow.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: pad),
-            slow.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4),
-
-            fast.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -pad),
-            fast.centerYAnchor.constraint(equalTo: slow.centerYAnchor),
-        ])
-
-        let item = NSMenuItem()
-        item.view = container
-        return item
-    }
-
-    // MARK: - Actions
-
-    @objc private func toggleEnabled(_ sender: NSMenuItem) {
-        Settings.shared.enabled.toggle()
-        sender.state = Settings.shared.enabled ? .on : .off
-    }
-
-    @objc private func toggleReverse(_ sender: NSMenuItem) {
-        Settings.shared.reverse.toggle()
-        sender.state = Settings.shared.reverse ? .on : .off
-    }
-
-    @objc private func speedChanged(_ sender: NSSlider) {
-        Settings.shared.speed = sender.doubleValue
-    }
-
-    @objc private func toggleJumpShortcut(_ sender: NSMenuItem) {
-        Settings.shared.jumpShortcutEnabled.toggle()
-        sender.state = Settings.shared.jumpShortcutEnabled ? .on : .off
-    }
-
-    // MARK: - Launch at login
-
-    private func isLaunchAtLoginEnabled() -> Bool {
-        SMAppService.mainApp.status == .enabled
-    }
-
-    @objc private func toggleLaunchAtLogin(_ sender: NSMenuItem) {
-        let service = SMAppService.mainApp
-        do {
-            if service.status == .enabled {
-                try service.unregister()
-            } else {
-                try service.register()
-            }
-            sender.state = isLaunchAtLoginEnabled() ? .on : .off
-        } catch {
-            NSLog("Launch at login toggle failed: \(error.localizedDescription). This only works when running the bundled .app (make run-app / make install).")
-            let alert = NSAlert()
-            alert.messageText = "Can't change Launch at Login"
-            alert.informativeText = "This feature requires running the bundled app (from /Applications). Build with `make bundle` or `make install` first.\n\n\(error.localizedDescription)"
-            alert.alertStyle = .warning
-            alert.runModal()
+    @objc private func statusItemClicked(_ sender: Any?) {
+        guard let event = NSApp.currentEvent else {
+            showSettingsWindow()
+            return
         }
+        let isRightClick = event.type == .rightMouseUp
+            || (event.type == .leftMouseUp && event.modifierFlags.contains(.control))
+        if isRightClick {
+            presentContextMenu()
+        } else {
+            showSettingsWindow()
+        }
+    }
+
+    private func presentContextMenu() {
+        guard let item = statusItem, let button = item.button, let menu = contextMenu else { return }
+        // Attach temporarily so the system positions the menu under the status item; detach after.
+        item.menu = menu
+        button.performClick(nil)
+        item.menu = nil
+    }
+
+    @objc private func showSettings() {
+        showSettingsWindow()
+    }
+
+    // MARK: - Settings window
+
+    private func showSettingsWindow() {
+        if settingsWindowController == nil {
+            let controller = SettingsWindowController()
+            controller.onClose = { [weak self] in self?.settingsWindowDidClose() }
+            settingsWindowController = controller
+        }
+        NSApp.setActivationPolicy(.regular)
+        settingsWindowController?.show()
+    }
+
+    private func settingsWindowDidClose() {
+        NSApp.setActivationPolicy(.accessory)
     }
 }

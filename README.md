@@ -10,6 +10,8 @@ A tiny native macOS menu-bar app that adds smooth scrolling for external mice, w
 - **Jump to top / bottom** — hold `⌘⇧` and scroll up/down to jump to edges
 - Launch at login
 - Lives in the menu bar (no Dock icon)
+- **Settings window** — full SwiftUI preferences pane, reachable from the menu bar or by relaunching
+- **Hide menu bar icon** — run invisibly; reopen settings by relaunching via Spotlight, Raycast, etc.
 
 ## Shortcuts
 
@@ -41,10 +43,12 @@ mac-smooth-scrolling/
 ├── .env                             # local signing config (gitignored)
 ├── .env.example                     # template for .env / .env.prod
 └── Sources/MacSmoothScroll/
-    ├── main.swift                   # NSApp bootstrap (accessory mode)
-    ├── AppDelegate.swift            # status bar item + menu UI
-    ├── ScrollEngine.swift           # CGEventTap + momentum smoothing
-    ├── Settings.swift               # UserDefaults-backed preferences
+    ├── main.swift                       # NSApp bootstrap (accessory mode)
+    ├── AppDelegate.swift                # status bar item + menu UI, window mgmt, reopen handling
+    ├── ScrollEngine.swift               # CGEventTap + momentum smoothing
+    ├── Settings.swift                   # ObservableObject + UserDefaults-backed preferences
+    ├── SettingsView.swift               # SwiftUI settings pane
+    ├── SettingsWindowController.swift   # NSWindow host for the settings view
     └── Resources/
         ├── Info.plist               # bundle metadata (LSUIElement = true)
         └── MacSmoothScroll.entitlements
@@ -119,6 +123,27 @@ make sign   # build, sign with Developer ID, notarize, staple
 make dmg    # package the signed .app into a distributable DMG
 ```
 
+## Menu bar behavior
+
+- **Left-click** the menu bar icon → opens the **Settings** window directly.
+- **Right-click** (or Control-click) the menu bar icon → shows a small menu with **Settings…** and **Quit**.
+
+All preferences live in the Settings window — the menu bar is just a shortcut.
+
+## Settings window
+
+Open it by left-clicking the menu bar icon, choosing **Settings…** from the right-click menu, or by relaunching the app (Spotlight, Raycast, `open -a MacSmoothScroll`).
+
+While the settings window is open, the app temporarily switches its activation policy from `.accessory` to `.regular`, so the window can take focus and the Dock shows the app. On close, it switches back — no lingering Dock icon.
+
+If **Hide menu bar icon** is enabled, the menu bar icon is removed entirely. To get back into the app:
+
+1. Launch MacSmoothScroll again (Spotlight / Raycast / `open -a MacSmoothScroll`).
+2. The running instance catches the reopen event and shows the settings window.
+3. Toggle **Hide menu bar icon** off if you want the icon back.
+
+As a safety net, the app auto-opens the settings window on startup whenever the menu bar icon is hidden — **except** when the launch looks like a login auto-start (system uptime < 2 minutes). This keeps logins quiet: the app comes up silently if both launch-at-login and hide-menu-bar-icon are enabled. To reach settings after boot, just relaunch via Spotlight or Raycast.
+
 ## Preferences
 
 Stored in `UserDefaults` under these keys:
@@ -129,6 +154,7 @@ Stored in `UserDefaults` under these keys:
 | `reverseMouse`         | Bool   | `false` | —         |
 | `scrollSpeed`          | Double | `3.0`   | 1.0 – 6.0 |
 | `jumpShortcutEnabled`  | Bool   | `true`  | —         |
+| `hideMenuBarIcon`      | Bool   | `false` | —         |
 
 Reset with:
 
