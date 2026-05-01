@@ -1,6 +1,15 @@
 # MacSmoothScroll
 
+[![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-blue)](https://www.apple.com/macos/)
+[![Swift](https://img.shields.io/badge/swift-6.0-orange)](https://swift.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
+
 A tiny native macOS menu-bar app that adds smooth scrolling for external mice, with adjustable speed and a reverse-direction toggle. Trackpads and Magic Mouse are left alone (macOS already smooths them).
+
+## Why this exists
+
+External wheel mice on macOS scroll in chunky, line-by-line steps — nothing like the buttery feel of a trackpad. Most fixes are heavy commercial apps with kernel extensions and subscriptions. **MacSmoothScroll** is a small, open-source alternative: one binary, no kext, no telemetry, no account.
 
 ## Features
 
@@ -89,53 +98,9 @@ make clean
 
 When you first launch the app, macOS will prompt for Accessibility permission. Grant it in **System Settings → Privacy & Security → Accessibility**, then relaunch. Without it, the scroll event tap cannot run.
 
-## Signing configuration
+## Signing & distribution
 
-Signing identities are loaded from `.env` (dev) and `.env.prod` (distribution). See `.env.example` for the full template.
-
-### Development signing (`.env`)
-
-Used by `make bundle` and `make install`. A stable self-signed identity lets macOS remember the Accessibility permission across rebuilds (ad-hoc signatures change every build and force you to re-grant).
-
-```env
-# Any name works — this is the Common Name of a self-signed cert in your Keychain.
-# Defaults to "MacSmoothScroll Dev" if unset.
-# Use "-" for ad-hoc (permission will reset every rebuild).
-CODESIGN_IDENTITY=Your Name Local Dev
-```
-
-To create a reusable self-signed cert:
-
-1. Open **Keychain Access → Certificate Assistant → Create a Certificate…**
-2. Name: your chosen `CODESIGN_IDENTITY` value
-3. Identity Type: Self Signed Root
-4. Certificate Type: Code Signing
-5. Save it in the **login** keychain
-
-### Production signing & notarization (`.env.prod`)
-
-Used by `make sign` to produce a Developer ID–signed, notarized bundle ready for public distribution.
-
-```env
-SIGN_IDENTITY=Developer ID Application: Your Name (TEAMID)
-APPLE_API_KEY=/absolute/path/to/AuthKey_XXXXXXXXXX.p8
-APPLE_API_KEY_ID=XXXXXXXXXX
-APPLE_API_ISSUER=00000000-0000-0000-0000-000000000000
-APPLE_TEAM_ID=TEAMID
-```
-
-Values come from your Apple Developer account:
-
-- `SIGN_IDENTITY` — the full string from `security find-identity -v -p codesigning`
-- `APPLE_API_KEY*` — an App Store Connect API key (Users and Access → Integrations → App Store Connect API)
-- `APPLE_TEAM_ID` — from developer.apple.com → Membership
-
-Then:
-
-```bash
-make sign   # build, sign with Developer ID, notarize, staple
-make dmg    # package the signed .app into a distributable DMG
-```
+Code signing and notarization are documented separately in **[SIGNING.md](SIGNING.md)**. You only need it if you're building a signed `.app` for distribution — running locally with `make run` requires no setup.
 
 ## Menu bar behavior
 
@@ -148,7 +113,7 @@ All preferences live in the Settings window — the menu bar is just a shortcut.
 
 Open it by left-clicking the menu bar icon, choosing **Settings…** from the right-click menu, or by relaunching the app (Spotlight, Raycast, `open -a MacSmoothScroll`).
 
-While the settings window is open, the app temporarily switches its activation policy from `.accessory` to `.regular`, so the window can take focus and the Dock shows the app. On close, it switches back — no lingering Dock icon.
+The app runs as an `.accessory` (agent) app at all times — no Dock icon, and it does **not** appear in the macOS Force Quit panel (`⌘⌥Esc`). The settings window is brought to the front via `NSApp.activate(ignoringOtherApps:)` when opened.
 
 If **Hide menu bar icon** is enabled, the menu bar icon is removed entirely. To get back into the app:
 
@@ -207,3 +172,57 @@ Fraction of the pending scroll distance consumed per frame (at ~60fps).
 | `sign`     | Developer ID signing + notarization (needs `.env.prod`)        |
 | `dmg`      | Package the signed `.app` as a UDZO DMG                        |
 | `clean`    | `swift package clean` + remove `.app` / `.zip` / `.dmg`        |
+
+## Contributing
+
+Contributions are welcome — bug reports, feature ideas, and pull requests.
+
+1. **Fork** the repo and create a feature branch (`git checkout -b feat/my-change`).
+2. Build locally with `make run` and verify behavior.
+3. Keep changes focused; small, reviewable PRs land faster than big ones.
+4. Open a PR against `main` describing **what** changed and **why**.
+
+If you're planning a larger change (new feature, refactor), please open an issue first to discuss the approach.
+
+### Local development
+
+```bash
+git clone https://github.com/<your-username>/mac-smooth-scrolling.git
+cd mac-smooth-scrolling
+make run
+```
+
+You'll need a recent Xcode (Swift 6.0) and to grant Accessibility permission on first run.
+
+## Reporting bugs & requesting features
+
+Use [GitHub Issues](../../issues). Helpful info to include:
+
+- macOS version (e.g. 14.5)
+- Mouse model (e.g. Logitech MX Master 3S)
+- Steps to reproduce
+- What you expected vs what happened
+- Relevant settings (speed, reverse, jump hotkey)
+
+## Code of Conduct
+
+Be kind and respectful. This project follows the spirit of the [Contributor Covenant](https://www.contributor-covenant.org/). Harassment, personal attacks, or discriminatory behavior will not be tolerated.
+
+## Security
+
+If you discover a security issue (e.g. something exploitable in the event tap or signing flow), please **do not** open a public issue. Email the maintainer directly at `edwin@netlinkvoice.com` with details and we'll respond as soon as possible.
+
+## License
+
+Released under the [MIT License](LICENSE). You're free to use, modify, and distribute this software — see the `LICENSE` file for the full text.
+
+## Acknowledgments
+
+- Built with [Swift](https://swift.org) and AppKit.
+- Inspired by the long lineage of macOS smooth-scrolling utilities — this one just aims to stay tiny, native, and free.
+
+## Author
+
+Made by [Edwin Encomienda](https://github.com/edwinencomienda).
+
+If MacSmoothScroll makes your daily scrolling nicer, consider **starring the repo** ⭐ — it helps others discover the project.
