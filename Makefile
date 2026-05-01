@@ -41,6 +41,7 @@ bundle: release
 	@if [ -d "$(BUILD_DIR)/release/MacSmoothScroll_MacSmoothScroll.bundle" ]; then \
 		rsync -a "$(BUILD_DIR)/release/MacSmoothScroll_MacSmoothScroll.bundle" $(APP_BUNDLE)/Contents/Resources/; \
 	fi
+	@cp Sources/MacSmoothScroll/Resources/AppIcon.icns $(APP_BUNDLE)/Contents/Resources/AppIcon.icns
 	@codesign --force --deep --sign "$(CODESIGN_IDENTITY)" --identifier $(BUNDLE_ID) --entitlements $(ENTITLEMENTS) $(APP_BUNDLE)
 	@echo "Created $(APP_BUNDLE)"
 
@@ -83,6 +84,7 @@ sign: release
 	@if [ -d "$(BUILD_DIR)/release/MacSmoothScroll_MacSmoothScroll.bundle" ]; then \
 		rsync -a "$(BUILD_DIR)/release/MacSmoothScroll_MacSmoothScroll.bundle" $(APP_BUNDLE)/Contents/Resources/; \
 	fi
+	@cp Sources/MacSmoothScroll/Resources/AppIcon.icns $(APP_BUNDLE)/Contents/Resources/AppIcon.icns
 	@echo "==> Signing with Developer ID..."
 	@codesign --force --deep --options runtime \
 		--sign "$(SIGN_IDENTITY)" \

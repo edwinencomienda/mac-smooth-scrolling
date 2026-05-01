@@ -88,10 +88,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard statusItem == nil else { return }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = item.button {
-            if let url = Bundle.module.url(forResource: "mouse", withExtension: "svg"),
+            if let url = Bundle.module.url(forResource: "tray", withExtension: "png"),
                let image = NSImage(contentsOf: url) {
                 image.size = NSSize(width: 18, height: 18)
-                image.isTemplate = true
+                image.isTemplate = false
                 button.image = image
             } else {
                 button.title = "↕"

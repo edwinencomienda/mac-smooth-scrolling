@@ -18,6 +18,8 @@ let package = Package(
             ],
             resources: [
                 .copy("Resources/mouse.svg"),
+                .copy("Resources/tray.png"),
+                .copy("Resources/AppIcon.icns"),
             ]
         ),
     ]
