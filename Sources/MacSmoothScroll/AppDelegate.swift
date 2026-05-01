@@ -148,11 +148,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             controller.onClose = { [weak self] in self?.settingsWindowDidClose() }
             settingsWindowController = controller
         }
-        NSApp.setActivationPolicy(.regular)
         settingsWindowController?.show()
     }
 
     private func settingsWindowDidClose() {
-        NSApp.setActivationPolicy(.accessory)
     }
 }
