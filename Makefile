@@ -57,7 +57,7 @@ install: bundle
 	@echo "Installed $(APP_NAME).app to $(INSTALL_DIR)"
 
 # Code sign with Developer ID + notarize for distribution
-# Requires .env.prod file with SIGN_IDENTITY, APPLE_API_KEY, APPLE_API_KEY_ID, APPLE_API_ISSUER, APPLE_TEAM_ID
+# Requires .env.prod file with SIGN_IDENTITY, APPLE_API_KEY, APPLE_API_KEY_ID, APPLE_API_ISSUER
 sign: release
 	@# Load .env.prod for production signing
 	@if [ ! -f .env.prod ]; then \

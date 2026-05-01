@@ -51,6 +51,19 @@ struct SettingsView: View {
             }
 
             Section {
+                LabeledContent("Version") {
+                    Text(appVersion)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                LabeledContent("Author") {
+                    Link("Edwin Encomienda", destination: URL(string: "https://github.com/edwinencomienda")!)
+                }
+            } header: {
+                Text("About")
+            }
+
+            Section {
                 HStack {
                     Spacer()
                     Button(role: .destructive) {
@@ -65,6 +78,13 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 440)
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        let short = (info?["CFBundleShortVersionString"] as? String) ?? AppInfo.version
+        let build = (info?["CFBundleVersion"] as? String) ?? AppInfo.build
+        return short == build ? "v\(short)" : "v\(short) (\(build))"
     }
 
     private var launchAtLoginBinding: Binding<Bool> {
