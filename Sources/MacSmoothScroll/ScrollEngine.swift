@@ -18,6 +18,8 @@ final class ScrollEngine {
 
     private let lock = NSLock()
 
+    var isRunning: Bool { eventTap != nil }
+
     // Fraction of remaining distance consumed per frame (~60fps).
     // 0.15 → ~95% travelled in ~18 frames (~300ms). Higher = snappier.
     private let frameFraction: Double = 0.15

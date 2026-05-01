@@ -8,12 +8,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var contextMenu: NSMenu?
     private var settingsWindowController: SettingsWindowController?
     private var cancellables: Set<AnyCancellable> = []
+    private var permissionPollTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         ensureAccessibilityPermission()
         applyMenuBarVisibility()
         observeSettings()
         ScrollEngine.shared.start()
+        if !ScrollEngine.shared.isRunning {
+            startPermissionPoll()
+        }
 
         // If the menu bar icon is hidden, surface settings so the user isn't stranded.
         // But stay silent on a likely boot launch — popping a window during login is jarring.
@@ -53,8 +57,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let opts = [key: true] as CFDictionary
         let trusted = AXIsProcessTrustedWithOptions(opts)
         if !trusted {
-            NSLog("Accessibility permission not granted. Grant it in System Settings → Privacy & Security → Accessibility, then relaunch.")
+            NSLog("Accessibility permission not granted. Waiting for the user to grant it…")
         }
+    }
+
+    /// Once the user grants Accessibility in System Settings, the macOS process trust flag
+    /// flips on without our process restarting. Poll for that flip and start the scroll
+    /// engine in place — no quit-and-relaunch dance for the user.
+    private func startPermissionPoll() {
+        permissionPollTimer?.invalidate()
+        let timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            guard AXIsProcessTrusted() else { return }
+            timer.invalidate()
+            self.permissionPollTimer = nil
+            ScrollEngine.shared.start()
+            NSLog("Accessibility permission granted — smooth scrolling is now active.")
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        permissionPollTimer = timer
     }
 
     // MARK: - Settings observation
