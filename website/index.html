@@ -22,6 +22,30 @@
       --easing: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    [data-theme="light"] {
+      --bg-deep: #f2f2f5;
+      --bg-base: #ffffff;
+      --bg-elevated: #e8e8ec;
+      --surface: rgba(0, 0, 0, 0.04);
+      --foreground: #1d1d1f;
+      --foreground-muted: #6e6e73;
+      --accent: #22C55E;
+      --accent-glow: rgba(34, 197, 94, 0.2);
+      --border: rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="light"] h1 {
+      background: linear-gradient(180deg, #1d1d1f 0%, rgba(0, 0, 0, 0.65) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    [data-theme="light"] body::before,
+    [data-theme="light"] body::after {
+      opacity: 0.1;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
@@ -212,6 +236,43 @@
       font-weight: 500;
     }
 
+    /* Theme toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.25rem;
+      z-index: 10;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--foreground-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s var(--easing);
+      animation: fadeUp 0.8s var(--easing) 0.1s both;
+    }
+
+    .theme-toggle:hover {
+      color: var(--foreground);
+      border-color: var(--foreground-muted);
+    }
+
+    .theme-toggle svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .theme-toggle .sun { display: none; }
+    .theme-toggle .moon { display: block; }
+    [data-theme="light"] .theme-toggle .sun { display: block; }
+    [data-theme="light"] .theme-toggle .moon { display: none; }
+
     /* Animations */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
@@ -241,6 +302,14 @@
   </style>
 </head>
 <body>
+  <button class="theme-toggle" aria-label="Toggle theme">
+    <svg class="sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+    </svg>
+    <svg class="moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+    </svg>
+  </button>
   <main class="hero">
     <div class="app-icon">
       <img src="app-icon.png" alt="Mac Smooth Scrolling app icon" width="96" height="96">
@@ -266,6 +335,21 @@
     </div>
   </main>
   <script>
+    // Theme toggle
+    (function() {
+      const stored = localStorage.getItem('theme');
+      const pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      const theme = stored || pref;
+      document.documentElement.setAttribute('data-theme', theme);
+
+      document.querySelector('.theme-toggle').addEventListener('click', () => {
+        const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+      });
+    })();
+
+    // GitHub release fetch
     fetch('https://api.github.com/repos/edwinencomienda/mac-smooth-scrolling/releases/latest')
       .then(r => r.json())
       .then(release => {
