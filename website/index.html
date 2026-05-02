@@ -3,7 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mac Smooth Scrolling</title>
+  <title>Mac Smooth Scrolling — Smooth scrolling for external mice on macOS</title>
+  <meta name="description" content="Fix choppy scrolling on external mice. Mac Smooth Scrolling brings fluid, natural scroll feel to Logitech, MX Master, Razer, and any third-party mouse on macOS. Free and open source.">
+  <meta name="keywords" content="mac smooth scrolling, external mouse scrolling, logitech mac scrolling, mx master mac, razer mac scrolling, smooth scroll mac, macOS mouse scrolling">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://macsmoothscrolling.com">
+  <meta property="og:title" content="Mac Smooth Scrolling — Smooth scrolling for external mice on macOS">
+  <meta property="og:description" content="Fix choppy scrolling on external mice. Fluid, natural scroll feel for Logitech, MX Master, Razer, and any third-party mouse on macOS. Free and open source.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://macsmoothscrolling.com">
+  <meta property="og:image" content="https://macsmoothscrolling.com/app-icon.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Mac Smooth Scrolling — Smooth scrolling for external mice on macOS">
+  <meta name="twitter:description" content="Fix choppy scrolling on external mice. Fluid, natural scroll feel for Logitech, MX Master, Razer, and any third-party mouse on macOS.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -135,9 +147,37 @@
       font-size: 1.125rem;
       color: var(--foreground-muted);
       line-height: 1.6;
-      margin-bottom: 2.5rem;
+      margin-bottom: 1.5rem;
       font-weight: 400;
       animation: fadeUp 0.8s var(--easing) 0.2s both;
+    }
+
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.8s var(--easing) 0.25s both;
+    }
+
+    .features span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.8125rem;
+      color: var(--foreground-muted);
+      font-weight: 500;
+    }
+
+    .features svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
     }
 
     .cta-row {
@@ -315,7 +355,13 @@
       <img src="app-icon.png" alt="Mac Smooth Scrolling app icon" width="96" height="96">
     </div>
     <h1>Mac Smooth Scrolling</h1>
-    <p class="subtitle">Fluid, natural scrolling that feels the way your Mac should.</p>
+    <p class="subtitle">Fix choppy scrolling on your external mouse. Mac Smooth Scrolling gives any third-party mouse the fluid, natural scroll feel your Mac&rsquo;s trackpad already has.</p>
+    <div class="features">
+      <span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Any external mouse</span>
+      <span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Momentum scrolling</span>
+      <span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Adjustable speed</span>
+      <span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Free &amp; open source</span>
+    </div>
     <div class="cta-row">
       <a class="btn" href="#" aria-label="Download Mac Smooth Scrolling" id="download-link">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -323,7 +369,7 @@
         </svg>
         Download
       </a>
-      <div class="badge">macOS 13+ · Apple Silicon & Intel</div>
+      <div class="badge">macOS 13+ · Apple Silicon &amp; Intel · No trackpad required</div>
     </div>
     <div class="author">
       <a href="https://github.com/edwinencomienda" target="_blank" rel="noopener noreferrer">
