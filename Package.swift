@@ -14,7 +14,6 @@ let package = Package(
             name: "MacSmoothScroll",
             exclude: [
                 "Resources/Info.plist",
-                "Resources/MacSmoothScroll.entitlements",
             ],
             resources: [
                 .copy("Resources/mouse.svg"),

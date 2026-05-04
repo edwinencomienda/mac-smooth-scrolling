@@ -73,8 +73,7 @@ mac-smooth-scrolling/
     ├── SettingsWindowController.swift   # NSWindow host for the settings view
     ├── HotkeyRecorder.swift             # modifier-combo recorder used in settings
     └── Resources/
-        ├── Info.plist               # bundle metadata (LSUIElement = true)
-        └── MacSmoothScroll.entitlements
+        └── Info.plist               # bundle metadata (LSUIElement = true)
 ```
 
 ## Quick start
@@ -170,7 +169,7 @@ Fraction of the pending scroll distance consumed per frame (at ~60fps).
 | `run-app`  | Build bundle and `open` it                                     |
 | `install`  | Copy the signed bundle into `/Applications`                    |
 | `sign`     | Developer ID signing + notarization (needs `.env.prod`)        |
-| `dmg`      | Package the signed `.app` as a UDZO DMG                        |
+| `dmg`      | Package the signed `.app` as a UDZO DMG with xattrs stripped   |
 | `clean`    | `swift package clean` + remove `.app` / `.zip` / `.dmg`        |
 
 ## Contributing

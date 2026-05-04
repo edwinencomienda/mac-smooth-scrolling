@@ -6,8 +6,6 @@ DEBUG_BIN = $(BUILD_DIR)/debug/macsmoothscroll
 RELEASE_BIN = $(BUILD_DIR)/release/macsmoothscroll
 INSTALL_DIR = /Applications
 PLIST = Sources/MacSmoothScroll/Resources/Info.plist
-ENTITLEMENTS = Sources/MacSmoothScroll/Resources/MacSmoothScroll.entitlements
-
 # Load .env file if it exists (for development signing configuration)
 ifneq (,$(wildcard .env))
     include .env
@@ -42,7 +40,7 @@ bundle: release
 		rsync -a "$(BUILD_DIR)/release/MacSmoothScroll_MacSmoothScroll.bundle" $(APP_BUNDLE)/Contents/Resources/; \
 	fi
 	@cp Sources/MacSmoothScroll/Resources/AppIcon.icns $(APP_BUNDLE)/Contents/Resources/AppIcon.icns
-	@codesign --force --deep --sign "$(CODESIGN_IDENTITY)" --identifier $(BUNDLE_ID) --entitlements $(ENTITLEMENTS) $(APP_BUNDLE)
+	@codesign --force --deep --sign "$(CODESIGN_IDENTITY)" --identifier $(BUNDLE_ID) $(APP_BUNDLE)
 	@echo "Created $(APP_BUNDLE)"
 
 run: build
@@ -53,7 +51,7 @@ install: bundle
 	@echo "Using code signing identity: '$(CODESIGN_IDENTITY)'"
 	@mkdir -p "$(INSTALL_DIR)/$(APP_NAME).app"
 	@rsync -a --delete $(APP_BUNDLE)/ "$(INSTALL_DIR)/$(APP_NAME).app/"
-	@codesign --force --deep --sign "$(CODESIGN_IDENTITY)" --identifier $(BUNDLE_ID) --entitlements $(ENTITLEMENTS) "$(INSTALL_DIR)/$(APP_NAME).app"
+	@codesign --force --deep --sign "$(CODESIGN_IDENTITY)" --identifier $(BUNDLE_ID) "$(INSTALL_DIR)/$(APP_NAME).app"
 	@echo "Installed $(APP_NAME).app to $(INSTALL_DIR)"
 
 # Code sign with Developer ID + notarize for distribution
@@ -89,7 +87,6 @@ sign: release
 	@codesign --force --deep --options runtime \
 		--sign "$(SIGN_IDENTITY)" \
 		--identifier $(BUNDLE_ID) \
-		--entitlements $(ENTITLEMENTS) \
 		--timestamp \
 		$(APP_BUNDLE)
 	@echo "==> Verifying signature..."
@@ -116,7 +113,8 @@ dmg:
 	@echo "==> Creating DMG..."
 	@rm -rf $(BUILD_DIR)/dmg-staging
 	@mkdir -p $(BUILD_DIR)/dmg-staging
-	@cp -R $(APP_BUNDLE) $(BUILD_DIR)/dmg-staging/
+	@ditto --noextattr --noqtn $(APP_BUNDLE) $(BUILD_DIR)/dmg-staging/$(APP_NAME).app
+	@xattr -cr $(BUILD_DIR)/dmg-staging/$(APP_NAME).app
 	@ln -s /Applications $(BUILD_DIR)/dmg-staging/Applications
 	@rm -f $(BUILD_DIR)/$(APP_NAME).dmg
 	@hdiutil create -volname "$(APP_NAME)" \
