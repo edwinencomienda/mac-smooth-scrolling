@@ -52,7 +52,7 @@ final class Settings: ObservableObject {
 
     private init() {
         self.enabled = defaults.object(forKey: Keys.enabled) as? Bool ?? true
-        self.reverse = defaults.bool(forKey: Keys.reverse)
+        self.reverse = defaults.object(forKey: Keys.reverse) as? Bool ?? true
         let rawSpeed = defaults.double(forKey: Keys.speed)
         self.speed = rawSpeed == 0 ? 3.0 : rawSpeed
         self.jumpShortcutEnabled = defaults.object(forKey: Keys.jumpShortcut) as? Bool ?? true
