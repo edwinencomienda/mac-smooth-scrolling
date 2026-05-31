@@ -19,18 +19,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startPermissionPoll()
         }
 
-        // If the menu bar icon is hidden, surface settings so the user isn't stranded.
-        // But stay silent on a likely boot launch — popping a window during login is jarring.
-        if Settings.shared.hideMenuBarIcon && !isLikelyLoginLaunch() {
-            showSettingsWindow()
-        }
-    }
-
-    /// Heuristic: if the system has only just finished booting, this launch is almost
-    /// certainly a "launch at login" auto-start rather than an explicit user action.
-    /// macOS doesn't expose a first-class API for this with `SMAppService.mainApp`.
-    private func isLikelyLoginLaunch() -> Bool {
-        ProcessInfo.processInfo.systemUptime < 120
     }
 
     func applicationWillTerminate(_ notification: Notification) {

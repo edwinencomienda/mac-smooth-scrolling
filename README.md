@@ -120,7 +120,7 @@ If **Hide menu bar icon** is enabled, the menu bar icon is removed entirely. To 
 2. The running instance catches the reopen event and shows the settings window.
 3. Toggle **Hide menu bar icon** off if you want the icon back.
 
-As a safety net, the app auto-opens the settings window on startup whenever the menu bar icon is hidden — **except** when the launch looks like a login auto-start (system uptime < 2 minutes). This keeps logins quiet: the app comes up silently if both launch-at-login and hide-menu-bar-icon are enabled. To reach settings after boot, just relaunch via Spotlight or Raycast.
+On startup, the app stays hidden when the menu bar icon is hidden. To reach settings after boot, relaunch via Spotlight or Raycast.
 
 ## Preferences
 
