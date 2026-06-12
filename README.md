@@ -7,6 +7,8 @@
 
 A tiny native macOS menu-bar app that adds smooth scrolling for external mice, with adjustable speed and a reverse-direction toggle. Trackpads and Magic Mouse are left alone (macOS already smooths them).
 
+**Website:** [smoothscroll.waycraftr.com](https://smoothscroll.waycraftr.com)
+
 ## Why this exists
 
 External wheel mice on macOS scroll in chunky, line-by-line steps — nothing like the buttery feel of a trackpad. Most fixes are heavy commercial apps with kernel extensions and subscriptions. **MacSmoothScroll** is a small, open-source alternative: one binary, no kext, no telemetry, no account.
@@ -100,6 +102,15 @@ When you first launch the app, macOS will prompt for Accessibility permission. G
 ## Signing & distribution
 
 Code signing and notarization are documented separately in **[SIGNING.md](SIGNING.md)**. You only need it if you're building a signed `.app` for distribution — running locally with `make run` requires no setup.
+
+## Website deployment
+
+The landing page lives in `website/` (static HTML) and is deployed to Cloudflare Workers as static assets, served at [smoothscroll.waycraftr.com](https://smoothscroll.waycraftr.com). Config is in `wrangler.jsonc` (worker name `smoothscroll-website`, custom domain attached).
+
+```bash
+# Deploy the website (requires `wrangler login`)
+npx wrangler deploy
+```
 
 ## Menu bar behavior
 

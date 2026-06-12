@@ -1,0 +1,13 @@
+{
+	"name": "smoothscroll-website",
+	"compatibility_date": "2026-06-12",
+	"assets": {
+		"directory": "./website"
+	},
+	"routes": [
+		{
+			"pattern": "smoothscroll.waycraftr.com",
+			"custom_domain": true
+		}
+	]
+}
