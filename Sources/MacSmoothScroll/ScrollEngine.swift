@@ -28,6 +28,19 @@ final class ScrollEngine {
     private var lastJumpTime: CFTimeInterval = 0
     private let jumpThrottle: CFTimeInterval = 0.4
 
+    // Jump burst: number of scroll events, distance each, and the gap between them.
+    // Firefox's async scrolling collapses events that arrive in the same instant, so
+    // the burst is spread over time instead of posted in a tight loop.
+    private let jumpStepCount = 12
+    private let jumpStepDistance: Int32 = 20_000
+    private let jumpStepInterval: TimeInterval = 0.02
+
+    // Stamped on jump events so our own tap recognises and passes them through
+    // instead of feeding them into the smoothing animator.
+    private let jumpEventTag: Int64 = 0x4D53_5343
+    // Bumped on every new jump so a burst still in flight cancels itself.
+    private var jumpGeneration: Int = 0
+
     func start() {
         guard eventTap == nil else { return }
 
@@ -78,6 +91,11 @@ final class ScrollEngine {
         }
 
         guard Settings.shared.enabled else {
+            return Unmanaged.passUnretained(event)
+        }
+
+        // Our own jump events — let them straight through, unsmoothed.
+        if event.getIntegerValueField(.eventSourceUserData) == jumpEventTag {
             return Unmanaged.passUnretained(event)
         }
 
@@ -224,10 +242,31 @@ final class ScrollEngine {
         residualX = 0; residualY = 0
         lock.unlock()
 
-        // One huge scroll event. Positive Y = scroll up (toward content top).
-        let magnitude: Int32 = 100_000
-        let deltaY: Int32 = up ? magnitude : -magnitude
+        // Firefox (and other apps with async scrolling) caps how far a single wheel
+        // event travels and collapses events that arrive in the same instant, so one
+        // enormous event — or a tight burst — often lands short. Spread bounded events
+        // over a few frames instead; each one is processed on its own.
+        jumpGeneration += 1
+        let generation = jumpGeneration
+        let deltaY: Int32 = up ? jumpStepDistance : -jumpStepDistance
 
+        for step in 0..<jumpStepCount {
+            let fire = { [weak self] in
+                guard let self = self, self.jumpGeneration == generation else { return }
+                self.postJumpStep(deltaY: deltaY)
+            }
+            if step == 0 {
+                fire()
+            } else {
+                DispatchQueue.main.asyncAfter(
+                    deadline: .now() + jumpStepInterval * Double(step),
+                    execute: fire
+                )
+            }
+        }
+    }
+
+    private func postJumpStep(deltaY: Int32) {
         guard let event = CGEvent(
             scrollWheelEvent2Source: nil,
             units: .pixel,
@@ -239,6 +278,7 @@ final class ScrollEngine {
 
         // Clear modifier flags so apps don't interpret this as Cmd+scroll (zoom, etc.).
         event.flags = []
+        event.setIntegerValueField(.eventSourceUserData, value: jumpEventTag)
         event.post(tap: .cgSessionEventTap)
     }
 }

@@ -49,6 +49,8 @@ Notes on the jump shortcut:
 - Works with both mouse wheel and trackpad.
 - Respects the **Reverse mouse scroll** setting — physical-up always means "go to top".
 - Throttled to ~400ms, so a single wheel flick = a single jump (no spam when holding).
+- Sends a short burst of bounded scroll events spread over ~240ms, rather than one huge event. Apps with async scrolling (Firefox especially) cap a single event's distance and collapse events that arrive at the same instant, so a spread-out burst lands reliably.
+- The burst bypasses the smoothing animator, so a jump is not slowed down by momentum.
 - Modifier flags are stripped from the synthesized scroll event, so apps don't misread it as `Cmd+scroll` zoom (Safari, Preview, etc.).
 - Can be turned off from the menu bar (**Jump to top / bottom** toggle).
 
